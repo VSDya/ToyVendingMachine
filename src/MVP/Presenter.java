@@ -13,96 +13,71 @@ public class Presenter {
         this.model = model;
     }
 
-    public void menu_processing() {
-        boolean process = true;
-        while (process) {
-            String user_input = view.menu();
+    public void menuProcessing() {
+        boolean running = true;
+
+        while (running) {
+            String userInput = view.menu();
 
             try {
-                switch (user_input) {
-                    case "1":
-                        add_a_toy_to_model(view.creating_the_toy());
-                        break;
-
-                    case "2":
-                        System.out.printf("Вы выйграли %s!\n", start_a_draw());
-                        break;
-                    case "3":
-                        System.out.printf(get_the_prize());
-                        break;
-                    case "4":
-                        System.out.println(model.toString());
-                        break;
-                    case "5":
-                        new_probability(view.change_probability());
-                        break;
-                    case "6":
-                        prize_pull_info();
-                        break;
-                    case "7":
-                        process = false;
-                        break;
-                    default:
-                        System.out.println("Некорректный ввод!");
+                switch (userInput) {
+                    case "1" -> addToyToModel(view.creating_the_toy());
+                    case "2" -> System.out.printf("You won: %s!%n", startDraw());
+                    case "3" -> System.out.print(claimPrize());
+                    case "4" -> System.out.print(model);
+                    case "5" -> changeProbability(view.change_probability());
+                    case "6" -> showPrizePull();
+                    case "7" -> running = false;
+                    default -> System.out.println("Invalid menu option!");
                 }
-            } catch (Exception e) {
-                e.printStackTrace();
+            } catch (IllegalArgumentException | IllegalStateException e) {
+                System.out.println("Error: " + e.getMessage());
             }
         }
-
     }
 
-    private boolean add_a_toy_to_model(String toy_info) {
-        String[] toy_chunks = toy_info.toLowerCase().split(",");
-        try {
-            String toy_name = toy_chunks[0].trim();
-            int toy_quantity = Integer.parseInt(toy_chunks[1].trim());
-            float toy_probability = Float.parseFloat(toy_chunks[2].trim());
-
-            return model.add_toy_to_list(new Toy(toy_name, toy_quantity, toy_probability));
-
-        } catch (RuntimeException e) {
-            throw new RuntimeException("Некорректная информация! ");
+    private void addToyToModel(String toyInfo) {
+        String[] parts = toyInfo.toLowerCase().split(",");
+        if (parts.length != 3) {
+            throw new IllegalArgumentException("Use: name, quantity, probability");
         }
+
+        String name = parts[0].trim();
+        int quantity = Integer.parseInt(parts[1].trim());
+        float probability = Float.parseFloat(parts[2].trim());
+
+        model.addToy(new Toy(name, quantity, probability));
     }
 
-    private boolean new_probability(String name_and_new_probability) {
-        try {
-            String[] new_info = name_and_new_probability.toLowerCase().split(",");
-            return model.set_new_probability(new_info);
-
-        } catch (RuntimeException e) {
-            throw new RuntimeException("Некорректное имя или вероятность!");
+    private void changeProbability(String input) {
+        String[] parts = input.toLowerCase().split(",");
+        if (parts.length != 2) {
+            throw new IllegalArgumentException("Use: name, probability");
         }
+
+        model.setProbability(parts[0].trim(), Float.parseFloat(parts[1].trim()));
     }
 
-    private String start_a_draw() {
-        try {
-            return model.add_to_prize_pull(model.hold_a_draw(model.getToy_list()));
-
-        } catch (RuntimeException e) {
-            throw new RuntimeException("Список игрушек для розыгрыша пуст!");
-        }
+    private String startDraw() {
+        Toy prize = model.drawPrize();
+        return prize.getName();
     }
 
-    private String get_the_prize() {
-        String prize = view.prize_name();
-        if(model.add_prize_to_database(prize)){
-            return "Вы выбрали " + prize + "!\n";
+    private String claimPrize() {
+        String prize = view.prize_name().trim();
+        if (model.claimPrize(prize)) {
+            return "Prize claimed: " + prize + System.lineSeparator();
         }
-        return "Такого выйгрыша нет!\n";
+        return "This prize is not waiting for collection." + System.lineSeparator();
     }
 
-    private void prize_pull_info() {
-        List<String> prize_pull = model.getPrize_pull();
-        if (prize_pull.isEmpty()) {
-            System.out.println("Пока нет ни одного выйгрыша!\n");
-        } else {
-            System.out.print("Выйгрыши: ");
-            for (String prize : prize_pull) {
-                System.out.print(prize + ", ");
-            }
-            System.out.println("\n");
+    private void showPrizePull() {
+        List<String> prizes = model.getPrizePull();
+        if (prizes.isEmpty()) {
+            System.out.println("There are no unclaimed prizes yet.");
+            return;
         }
+
+        System.out.println("Unclaimed prizes: " + String.join(", ", prizes));
     }
 }
