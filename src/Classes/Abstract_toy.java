@@ -1,17 +1,21 @@
 package Classes;
 
 public abstract class Abstract_toy {
-    protected int id = 0;
+    private static int nextId = 1;
+    private final int id;
     private String name;
+
+    protected Abstract_toy(String name) {
+        if (name == null || name.isBlank()) {
+            throw new IllegalArgumentException("Toy name cannot be empty");
+        }
+        this.id = nextId++;
+        this.name = name.trim();
+    }
 
     @Override
     public String toString() {
         return name;
-    }
-
-    public Abstract_toy(String name) {
-        this.id += 1;
-        this.name = name;
     }
 
     public int getId() {
@@ -23,6 +27,9 @@ public abstract class Abstract_toy {
     }
 
     public void setName(String name) {
-        this.name = name;
+        if (name == null || name.isBlank()) {
+            throw new IllegalArgumentException("Toy name cannot be empty");
+        }
+        this.name = name.trim();
     }
 }
